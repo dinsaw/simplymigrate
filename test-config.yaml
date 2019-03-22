@@ -1,0 +1,11 @@
+migration:
+  source:
+    database: SQLITE3
+    host: /Users/dineshsawant/testsource.db
+    userId:
+    password:
+  target:
+    database: MYSQL
+    host: 127.0.0.1
+    port: 3306
+    userId: root
