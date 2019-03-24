@@ -1,7 +1,6 @@
 package com.dineshsawant.datamig.database
 
 import java.time.LocalDate
-import java.util.*
 
 class PartitionKey(
     val column: Column,
@@ -12,21 +11,21 @@ class PartitionKey(
     val lastValue: Any = min
 
     fun nextRange(fetchSize: Int, last: Any?): Pair<Any, Any> {
-        var lastValueToBeUsed = last?: lastValue
+        var lastValueToBeUsed = last ?: lastValue
 
         var nextValue: Any
         return when (lastValueToBeUsed) {
             is Long -> {
                 nextValue = lastValueToBeUsed + fetchSize
-                Pair(lastValueToBeUsed, nextValue)
+                Pair(lastValueToBeUsed + 1, nextValue)
             }
-            is Int  -> {
+            is Int -> {
                 nextValue = lastValueToBeUsed + fetchSize
-                Pair(lastValueToBeUsed, nextValue)
+                Pair(lastValueToBeUsed + 1, nextValue)
             }
             is LocalDate -> {
                 nextValue = lastValueToBeUsed.plusDays(fetchSize.toLong())
-                Pair(lastValueToBeUsed, nextValue)
+                Pair(lastValueToBeUsed.plusDays(1), nextValue)
             }
             else -> throw IllegalArgumentException("Unable to create range for $lastValueToBeUsed")
         }

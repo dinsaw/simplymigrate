@@ -3,9 +3,18 @@ package com.dineshsawant.datamig.database
 import com.dineshsawant.datamig.config.DatabaseInfo
 
 interface Database {
-    fun getTableMetadata(table: String): QueryResultMetaData
+    fun getQueryMetaData(table: String): QueryResultMetaData
+
     fun upsert(tableMetaData: QueryResultMetaData, loadSize: Int, records: List<LinkedHashMap<String, Any>>)
-    fun getMinMax(table: String, column: Column, lower: String, upper: String, boundByColumns: List<Column>): Array<Any>
+
+    fun getMinMax(
+        table: String,
+        partitionColumn: Column,
+        lower: String,
+        upper: String,
+        boundByColumns: List<Column>
+    ): Array<Any>
+
     fun selectRecords(
         partitionKey: PartitionKey,
         start: Any,
@@ -16,9 +25,21 @@ interface Database {
         upper: String,
         boundByColumns: List<Column>
     ): List<LinkedHashMap<String, Any>>
+
+    fun getTableMetaData(table: String): QueryResultMetaData
+
+    fun getMinMaxForQuery(query: String, partitionColumn: Column): Array<Any>
+
+    fun selectRecordsByQuery(
+        partitionKey: PartitionKey,
+        start: Any,
+        end: Any,
+        fetchQuery: String,
+        columnSet: MutableSet<Column>
+    ): List<LinkedHashMap<String, Any>>
 }
 
-fun createDatabase(databaseInfo: DatabaseInfo) : Database {
+fun createDatabase(databaseInfo: DatabaseInfo): Database {
     return when (databaseInfo.database) {
         DatabaseVersion.MYSQL -> MySQLDatabase(databaseInfo)
         DatabaseVersion.SQLITE3 -> SQLiteDatabase(databaseInfo)

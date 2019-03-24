@@ -1,0 +1,1 @@
+select id, birthday from birthdays where birthday between '0106-01-03' and '1727-01-02'

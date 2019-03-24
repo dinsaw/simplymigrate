@@ -1,6 +1,5 @@
 package com.dineshsawant.datamig.database
 
-import java.sql.ResultSet
 import java.sql.ResultSetMetaData
 
 class QueryResultMetaData {

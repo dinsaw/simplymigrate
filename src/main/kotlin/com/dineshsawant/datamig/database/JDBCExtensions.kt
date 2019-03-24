@@ -10,19 +10,21 @@ fun ResultSetMetaData.toColumnSet() =
             this.getColumnType(it)
         )
 
-    when (this) {
-        is com.mysql.cj.jdbc.result.ResultSetMetaData -> {
-            column.primaryKey = this.fields[it-1].isPrimaryKey
-            column.uniqueKey = this.fields[it-1].isUniqueKey
+        when (this) {
+            is com.mysql.cj.jdbc.result.ResultSetMetaData -> {
+                column.primaryKey = this.fields[it - 1].isPrimaryKey
+                column.uniqueKey = this.fields[it - 1].isUniqueKey
+            }
+            else -> {
+                println("Unable to figure out primary and unique key for ${this.javaClass}")
+            }
         }
-        else -> {}
-    }
         column
     }.toMutableSet()
 
 fun PreparedStatement.setSQLObject(i: Int, value: Any) {
     when (value) {
-        // SQLite jdbc driver stores date as miliseconds. We dont want this behaviour
+        // SQLite jdbc driver stores date as miliseconds. We don't want this behaviour
         is java.sql.Date -> this.setString(i, value.toLocalDate().toString())
         else -> this.setObject(i, value)
     }

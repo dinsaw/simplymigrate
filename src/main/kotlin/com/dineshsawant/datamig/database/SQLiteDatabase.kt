@@ -2,17 +2,17 @@ package com.dineshsawant.datamig.database
 
 import com.dineshsawant.datamig.config.DatabaseInfo
 
-class SQLiteDatabase(dbInfo : DatabaseInfo) : SQLDatabase(dbInfo) {
+class SQLiteDatabase(dbInfo: DatabaseInfo) : SQLDatabase(dbInfo) {
 
-    override fun getTableMetadata(table: String): QueryResultMetaData {
-        val metaData = super.getTableMetadata(table)
+    override fun getTableMetaData(table: String): QueryResultMetaData {
+        val metaData = super.getTableMetaData(table)
 
         if (metaData.primaryKeyColumn == null) {
             connection.createStatement().connection.createStatement().use { statement ->
                 statement.execute("PRAGMA table_info($table)")
-                statement.resultSet.use {rs ->
+                statement.resultSet.use { rs ->
                     while (rs.next()) {
-                        if(1 == rs.getInt("pk")){
+                        if (1 == rs.getInt("pk")) {
                             val pkColumn = metaData.columnSet.first { it.label == rs.getString("name").toLowerCase() }
                             metaData.primaryKeyColumn = pkColumn
                             break
@@ -26,6 +26,7 @@ class SQLiteDatabase(dbInfo : DatabaseInfo) : SQLDatabase(dbInfo) {
 
     private val INSERT_OR_UPDATE_SQL_FORMAT: String = "INSERT INTO %s (%s) VALUES (%s)" +
             " ON CONFLICT(%s) DO UPDATE SET %s"
+
     /**
      * INSERT INTO phonebook(name,phonenumber) VALUES('Alice','704-555-1212')
      * ON CONFLICT(name) DO UPDATE SET phonenumber=excluded.phonenumber;
@@ -38,7 +39,9 @@ class SQLiteDatabase(dbInfo : DatabaseInfo) : SQLDatabase(dbInfo) {
         val updatePart = columns.filter { !it.equals(primaryColumnLabel, ignoreCase = true) }
             .map { "`$it`=excluded.$it" }.toList().joinToString(",")
 
-        return INSERT_OR_UPDATE_SQL_FORMAT.format(tableMetaData.tableName, columnPart, valuesPart,
-            primaryColumnLabel, updatePart)
+        return INSERT_OR_UPDATE_SQL_FORMAT.format(
+            tableMetaData.tableName, columnPart, valuesPart,
+            primaryColumnLabel, updatePart
+        )
     }
 }

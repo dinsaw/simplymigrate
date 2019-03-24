@@ -1,0 +1,9 @@
+--configFile=/Users/dineshsawant/oscode/migrator/test-config.yaml
+--sourceTable=birthdays
+--targetTable=test.birthdays
+--partitionKey=id
+--boundBy=birthday
+--lower=0106-01-03
+--upper=1735-01-01
+--fetchSize=3
+--fetchQueryFilePath=/Users/dineshsawant/oscode/migrator/test-query.sql
