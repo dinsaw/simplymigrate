@@ -1,12 +1,11 @@
 package com.dineshsawant.datamig.driver
 
 import com.dineshsawant.datamig.config.DatabaseInfo
-import com.dineshsawant.datamig.database.Database
-import com.dineshsawant.datamig.database.PartitionKey
-import com.dineshsawant.datamig.database.QueryResultMetaData
+import com.dineshsawant.datamig.database.*
 import java.time.LocalDate
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
+import kotlin.streams.toList
 
 class Migration(
     val sourceDbInfo: DatabaseInfo,
@@ -15,10 +14,13 @@ class Migration(
     val targetTable: String,
     val fetchSize: Int,
     val loadSize: Int,
-    val partitionKeyName: String
+    val partitionKeyName: String,
+    val boundBy: String,
+    val upper: String,
+    val lower: String
 ) {
-    private val sourceDatabase: Database by lazy { Database(sourceDbInfo) }
-    private val targetDatabase: Database by lazy { Database(targetDbInfo) }
+    private val sourceDatabase: Database by lazy { createDatabase(sourceDbInfo) }
+    private val targetDatabase: Database by lazy { createDatabase(targetDbInfo) }
     private var fetchCompleted = false
 
     val blockingQueue: BlockingQueue<List<LinkedHashMap<String, Any>>> = LinkedBlockingQueue(2)
@@ -31,10 +33,11 @@ class Migration(
         println("Target table metadata = $targetTableMetaData")
 
         startPusher(targetTableMetaData)
-        startFetcher(sourceTableMetaData, targetTableMetaData)
+        val fetcherThread = startFetcher(sourceTableMetaData, targetTableMetaData)
+        fetcherThread.join()
     }
 
-    private fun startPusher(targetTableMetaData: QueryResultMetaData) {
+    private fun startPusher(targetTableMetaData: QueryResultMetaData): Thread {
         println("Initializing pusher")
         val pusher: () -> Unit = {
             var migrationCount = 0
@@ -51,14 +54,19 @@ class Migration(
         val pusherThread = Thread(pusher)
         println("Starting pusher")
         pusherThread.start()
+        return pusherThread
     }
 
-    private fun startFetcher(
+    private fun startFetcher (
         sourceTableMetaData: QueryResultMetaData,
         targetTableMetaData: QueryResultMetaData
-    ) {
+    ) :Thread {
         val partitionKeyColumn = sourceTableMetaData.getColumnByLabel(partitionKeyName)!!
-        val (min, max) = sourceDatabase.getMinMax(sourceTable, partitionKeyColumn)
+        val columnList = boundBy.toLowerCase().split(",").toList()
+        val boundByColumns = sourceTableMetaData.columnSet.stream()
+                .filter { columnList.contains(it.label) }
+                .toList()
+        val (min, max) = sourceDatabase.getMinMax(sourceTable, partitionKeyColumn, lower, upper, boundByColumns)
         println("Min = $min Max = $max")
 
         val fetcher: () -> Unit = {
@@ -67,7 +75,8 @@ class Migration(
             while (true) {
                 val (start, end) = partitionKey.nextRange(fetchSize, last)
                 val records =
-                    sourceDatabase.selectRecords(partitionKey, start, end, sourceTable, targetTableMetaData.columnSet)
+                    sourceDatabase.selectRecords(partitionKey, start, end, sourceTable,
+                        targetTableMetaData.columnSet, lower, upper, boundByColumns)
                 if (records.isNotEmpty()) {
                     println("Putting records with size ${records.size}")
                     blockingQueue.put(records)
@@ -82,7 +91,7 @@ class Migration(
         }
         val fetchThread = Thread(fetcher)
         fetchThread.start()
-        fetchThread.join()
+        return fetchThread
     }
 
     private fun fetchCompleted(end: Any, max: Any): Boolean {

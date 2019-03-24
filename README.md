@@ -8,25 +8,36 @@ DataMig requires following configuration to start working on your source and sin
 
 `config.yaml`
 ```
-source
-    database:
-    host:
-    port:
+migration:
+  source:
+    database: SQLITE3
+    host: /Users/dineshsawant/testsource.db
     userId:
-    password
-sink
-    database:
-    host:
-    port:
-    userId:
-    password
+    password:
+  target:
+    database: MYSQL
+    host: 127.0.0.1
+    port: 3306
+    userId: root
 ```
 
 Then run following command:
 
-`java -jar migrate.jar --conf=config.yaml --sourceTable=schema.sourceTable --sinkTable=schema.sinkTable --fetchSize=100 --loadSize=100
---fromTime=2018-10-1 --toTime=2019-01-1`
+`java -jar migrate.jar --configFile=/Users/dineshsawant/oscode/migrator/test-config.yaml
+--sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id`
 
-## Move data from one relational/non-relational database to other relational/non-relational database
-## Choose set of records to be moved according to timestamp fields
-## It is fast.
+The above command will copy all records from `birthdays` table of SQLite database
+to MySQL database's `test.birthdays` table.
+
+## Choose set of records bounded by number or date or timestamp fields
+
+Following command will migrate records which have `id` from 100 to 1000 (inclusive).
+
+`java -jar migrate.jar --configFile=/Users/dineshsawant/oscode/migrator/test-config.yaml
+--sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id --boundBy=id --lower=100 --upper=1000`
+
+Following command will migrate records which have `birthday` from 1040-1-1 to 1940-1-1 (inclusive).
+
+`java -jar migrate.jar --configFile=/Users/dineshsawant/oscode/migrator/test-config.yaml
+--sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id
+--boundBy=birthday --lower=1040-1-1 --upper=1940-1-1`
