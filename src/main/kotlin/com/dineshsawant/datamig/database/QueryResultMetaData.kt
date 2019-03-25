@@ -25,12 +25,10 @@ class QueryResultMetaData {
         return "Table=$tableName, columnSet=$columnSet"
     }
 
-    fun schemaTable(): String = if (schemaName.isNotBlank()) {
-        "$schemaName.$tableName"
-    } else if (catalogName.isNotBlank()) {
-        "$catalogName.$tableName"
-    } else {
-        tableName
+    fun schemaTable(): String = when {
+        schemaName.isNotBlank() -> "$schemaName.$tableName"
+        catalogName.isNotBlank() -> "$catalogName.$tableName"
+        else -> tableName
     }
 
     fun getColumnByLabel(columnName: String): Column? = this.columnLabelMap[columnName.toLowerCase()]
