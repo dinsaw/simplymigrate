@@ -1,21 +1,22 @@
-package com.dineshsawant.datamig.database
+package com.dineshsawant.simplymigrate.database
 
-import com.dineshsawant.datamig.config.DatabaseInfo
+import com.dineshsawant.simplymigrate.config.DatabaseInfo
 import java.sql.Connection
 import java.sql.Date
 import java.sql.DriverManager
 import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
 import java.time.format.DateTimeFormatterBuilder
-import java.time.format.ResolverStyle
 
 open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
-    protected val connection: Connection = DriverManager.getConnection(dbInfo.url, dbInfo.userId, dbInfo.password)
+    protected val connection: Connection = setupConnection(dbInfo)
+
+    protected open fun setupConnection(dbInfo: DatabaseInfo) =
+        DriverManager.getConnection(dbInfo.url, dbInfo.userId, dbInfo.password)!!
 
     override fun getTableMetaData(table: String): QueryResultMetaData {
         connection.createStatement().connection.createStatement().use { statement ->
@@ -24,12 +25,12 @@ open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
         }
     }
 
-    override fun getQueryMetaData(query: String): QueryResultMetaData {
+    override fun getQueryMetaData(table: String): QueryResultMetaData {
         connection.createStatement().connection.createStatement().use { statement ->
-            val sql = if (query.contains(" where ")) {
-                "$query and 1=0"
+            val sql = if (table.contains(" where ")) {
+                "$table and 1=0"
             } else {
-                "$query where 1=0"
+                "$table where 1=0"
             }
             println("executing sql=$sql")
             statement.execute(sql)
@@ -39,18 +40,15 @@ open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
 
     override fun getMinMax(
         table: String,
-        partionColumn: Column,
+        partitionColumn: Column,
         lower: String,
         upper: String,
         boundByColumns: List<Column>
     ): Array<Any> {
         connection.createStatement().connection.createStatement().use { statement ->
             val sql =
-                "select min(${partionColumn.label}), max(${partionColumn.label}) from $table where ${boundCondition(
-                    boundByColumns,
-                    lower,
-                    upper
-                )}"
+                "select min(${partitionColumn.label}), max(${partitionColumn.label}) from $table" +
+                        " where ${boundCondition(boundByColumns,lower,upper)}"
             println("minmax sql = $sql")
             statement.execute(sql)
             statement.resultSet.use { resultSet ->

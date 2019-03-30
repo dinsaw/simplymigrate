@@ -1,6 +1,6 @@
-package com.dineshsawant.datamig.database
+package com.dineshsawant.simplymigrate.database
 
-import com.dineshsawant.datamig.config.DatabaseInfo
+import com.dineshsawant.simplymigrate.config.DatabaseInfo
 
 interface Database {
     fun getQueryMetaData(table: String): QueryResultMetaData

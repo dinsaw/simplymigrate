@@ -1,4 +1,4 @@
-package com.dineshsawant.datamig.database
+package com.dineshsawant.simplymigrate.database
 
 import java.time.LocalDate
 import java.time.LocalDateTime

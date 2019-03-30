@@ -1,6 +1,6 @@
-package com.dineshsawant.datamig.config
+package com.dineshsawant.simplymigrate.config
 
-import com.dineshsawant.datamig.database.DatabaseVersion
+import com.dineshsawant.simplymigrate.database.DatabaseVersion
 import com.uchuhimo.konf.ConfigSpec
 import java.io.Serializable
 

@@ -1,4 +1,4 @@
-package com.dineshsawant.datamig.driver
+package com.dineshsawant.simplymigrate.driver
 
 interface Migration {
     fun start(): Long

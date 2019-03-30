@@ -12,9 +12,9 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-    compile "com.uchuhimo:konf:$konfVersion"
     compile "info.picocli:picocli:$picoliVersion"
-    implementation "com.github.ajalt:clikt:$cliktVersion"
+    compile "com.uchuhimo:konf:$konfVersion"
+    compile "com.github.ajalt:clikt:$cliktVersion"
 
     // Database drivers
     compile "org.xerial:sqlite-jdbc:$sqliteDriverVersion"
@@ -26,4 +26,10 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+jar {
+    manifest { attributes 'Main-Class': 'com.dineshsawant.simplymigrate.AppMainKt' }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
 }

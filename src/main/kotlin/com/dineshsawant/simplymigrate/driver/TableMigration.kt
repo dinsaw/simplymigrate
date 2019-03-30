@@ -1,30 +1,37 @@
-package com.dineshsawant.datamig.driver
+package com.dineshsawant.simplymigrate.driver
 
-import com.dineshsawant.datamig.config.DatabaseInfo
-import com.dineshsawant.datamig.database.PartitionKey
-import com.dineshsawant.datamig.database.QueryResultMetaData
+import com.dineshsawant.simplymigrate.config.DatabaseInfo
+import com.dineshsawant.simplymigrate.database.PartitionKey
+import com.dineshsawant.simplymigrate.database.QueryResultMetaData
+import kotlin.streams.toList
 
-class QueryToTableMigration(
+class TableMigration(
     sourceDbInfo: DatabaseInfo,
     targetDbInfo: DatabaseInfo,
-    private val fetchQuery: String,
+    private val sourceTable: String,
     targetTable: String,
     fetchSize: Int,
     loadSize: Int,
-    partitionKeyName: String
+    partitionKeyName: String,
+    private val boundBy: String,
+    private val upper: String,
+    private val lower: String
 ) : MultiThreadedMigration(sourceDbInfo, targetDbInfo, targetTable, fetchSize, loadSize, partitionKeyName) {
-
 
     override fun getTargetMetaData() = targetDatabase.getTableMetaData(targetTable)
 
-    override fun getSourceMetaData() = sourceDatabase.getQueryMetaData(fetchQuery)
+    override fun getSourceMetaData() = sourceDatabase.getTableMetaData(sourceTable)
 
     override fun getFetcher(
         sourceTableMetaData: QueryResultMetaData,
         targetTableMetaData: QueryResultMetaData
     ): Runnable {
         val partitionKeyColumn = sourceTableMetaData.getColumnByLabel(partitionKeyName)!!
-        val (min, max) = sourceDatabase.getMinMaxForQuery(fetchQuery, partitionKeyColumn)
+        val columnList = boundBy.toLowerCase().split(",").toList()
+        val boundByColumns = sourceTableMetaData.columnSet.stream()
+            .filter { columnList.contains(it.label) }
+            .toList()
+        val (min, max) = sourceDatabase.getMinMax(sourceTable, partitionKeyColumn, lower, upper, boundByColumns)
         println("Min = $min Max = $max")
 
         return Runnable {
@@ -34,9 +41,9 @@ class QueryToTableMigration(
                 while (!fetchCompleted) {
                     val (start, end) = partitionKey.nextRange(fetchSize, last)
                     val records =
-                        sourceDatabase.selectRecordsByQuery(
-                            partitionKey, start, end, fetchQuery,
-                            targetTableMetaData.columnSet
+                        sourceDatabase.selectRecords(
+                            partitionKey, start, end, sourceTable,
+                            targetTableMetaData.columnSet, lower, upper, boundByColumns
                         )
                     if (records.isNotEmpty()) {
                         println("Putting records with size ${records.size}")
@@ -50,10 +57,11 @@ class QueryToTableMigration(
                     }
                 }
             } catch (e: Exception) {
-                println("${e.message}")
+                println("${e.message} ${e.stackTrace}")
                 e.printStackTrace()
                 System.exit(1)
             }
         }
     }
+
 }

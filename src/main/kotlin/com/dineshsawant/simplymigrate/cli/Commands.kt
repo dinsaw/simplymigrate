@@ -1,8 +1,8 @@
-package com.dineshsawant.datamig.cli
+package com.dineshsawant.simplymigrate.cli
 
-import com.dineshsawant.datamig.config.MigrationConfig
-import com.dineshsawant.datamig.driver.QueryToTableMigration
-import com.dineshsawant.datamig.driver.TableMigration
+import com.dineshsawant.simplymigrate.config.MigrationConfig
+import com.dineshsawant.simplymigrate.driver.QueryToTableMigration
+import com.dineshsawant.simplymigrate.driver.TableMigration
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
@@ -10,10 +10,6 @@ import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.types.int
 import com.uchuhimo.konf.Config
 import java.io.File
-import java.time.DateTimeException
-import java.time.Duration
-import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 class Migrate : CliktCommand() {
     val configFilePath: String by option("--configFile", help = "Config file path").prompt("Provide config file path")

@@ -1,8 +1,14 @@
-package com.dineshsawant.datamig.database
+package com.dineshsawant.simplymigrate.database
 
-import com.dineshsawant.datamig.config.DatabaseInfo
+import com.dineshsawant.simplymigrate.config.DatabaseInfo
+import java.sql.Connection
 
 class SQLiteDatabase(dbInfo: DatabaseInfo) : SQLDatabase(dbInfo) {
+
+    override fun setupConnection(dbInfo: DatabaseInfo): Connection {
+        Class.forName("org.sqlite.JDBC")
+        return super.setupConnection(dbInfo)
+    }
 
     override fun getTableMetaData(table: String): QueryResultMetaData {
         val metaData = super.getTableMetaData(table)

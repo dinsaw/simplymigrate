@@ -1,9 +1,9 @@
-package com.dineshsawant.datamig.driver
+package com.dineshsawant.simplymigrate.driver
 
-import com.dineshsawant.datamig.config.DatabaseInfo
-import com.dineshsawant.datamig.database.Database
-import com.dineshsawant.datamig.database.QueryResultMetaData
-import com.dineshsawant.datamig.database.createDatabase
+import com.dineshsawant.simplymigrate.config.DatabaseInfo
+import com.dineshsawant.simplymigrate.database.Database
+import com.dineshsawant.simplymigrate.database.QueryResultMetaData
+import com.dineshsawant.simplymigrate.database.createDatabase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.*
