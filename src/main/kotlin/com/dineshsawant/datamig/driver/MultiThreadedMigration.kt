@@ -5,6 +5,7 @@ import com.dineshsawant.datamig.database.Database
 import com.dineshsawant.datamig.database.QueryResultMetaData
 import com.dineshsawant.datamig.database.createDatabase
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.concurrent.*
 
 abstract class MultiThreadedMigration(
@@ -72,7 +73,8 @@ abstract class MultiThreadedMigration(
                 }
                 migrationCount
             } catch (e: Exception) {
-                println("Error ${e.message} ${e.stackTrace}")
+                println("Error ${e.message}")
+                e.printStackTrace()
                 System.exit(2)
                 migrationCount
             }
@@ -91,6 +93,10 @@ abstract class MultiThreadedMigration(
             }
             is LocalDate -> {
                 max as LocalDate
+                end.isAfter(max)
+            }
+            is LocalDateTime -> {
+                max as LocalDateTime
                 end.isAfter(max)
             }
             else -> throw UnsupportedOperationException()

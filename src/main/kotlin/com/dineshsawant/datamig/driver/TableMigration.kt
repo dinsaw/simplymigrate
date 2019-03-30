@@ -58,6 +58,7 @@ class TableMigration(
                 }
             } catch (e: Exception) {
                 println("${e.message} ${e.stackTrace}")
+                e.printStackTrace()
                 System.exit(1)
             }
         }

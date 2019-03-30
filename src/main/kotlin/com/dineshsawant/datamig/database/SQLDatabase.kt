@@ -4,7 +4,15 @@ import com.dineshsawant.datamig.config.DatabaseInfo
 import java.sql.Connection
 import java.sql.Date
 import java.sql.DriverManager
+import java.sql.Timestamp
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.chrono.IsoChronology
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
+import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
+import java.time.format.DateTimeFormatterBuilder
+import java.time.format.ResolverStyle
 
 open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
     protected val connection: Connection = DriverManager.getConnection(dbInfo.url, dbInfo.userId, dbInfo.password)
@@ -80,14 +88,27 @@ open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
     }
 
 
+    val SQL_LOCAL_DATE_TIME: DateTimeFormatter = DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .append(ISO_LOCAL_DATE)
+            .appendLiteral(' ')
+            .append(ISO_LOCAL_TIME).toFormatter()
+
     private fun typedValue(value: Any?): Any {
         return when (value) {
             is String -> {
                 try {
                     LocalDate.parse(value)
                 } catch (e: Exception) {
-                    value
+                    try {
+                        LocalDateTime.parse(value, SQL_LOCAL_DATE_TIME)
+                    } catch (e: Exception) {
+                        value
+                    }
                 }!!
+            }
+            is Timestamp -> {
+                value.toLocalDateTime()
             }
             is Date -> {
                 value.toLocalDate()
@@ -102,12 +123,11 @@ open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
     ): List<LinkedHashMap<String, Any>> {
         println("Selecting from $start and $end")
         connection.createStatement().connection.createStatement().use { statement ->
-            val sql =
-                "select ${selectFields(columnSet)} from $table where ${partitionKey.column.label} between ${toSqlValue(
-                    start
-                )} and ${toSqlValue(end)}" +
-                        " and (${boundCondition(boundByColumns, lower, upper)})"
+            val sql = "select ${selectFields(columnSet)} from $table" +
+                        " where ${partitionKey.column.label} between ${toSqlValue(start)}" +
+                        " and ${toSqlValue(end)} and (${boundCondition(boundByColumns, lower, upper)})"
             println("Prepared SQL = $sql")
+
             statement.execute(sql)
             statement.resultSet.use { rs ->
                 val records = arrayListOf<LinkedHashMap<String, Any>>()
@@ -159,6 +179,7 @@ open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
     private fun toSqlValue(value: Any): String {
         return when (value) {
             is Date -> "'${value.toLocalDate()}'"
+            is LocalDateTime -> "'${SQL_LOCAL_DATE_TIME.format(value)}'"
             else -> "'$value'"
         }
     }
@@ -173,7 +194,7 @@ open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
         if (records.isEmpty()) return
         connection.autoCommit = false
 
-        var sql = createUpsertQuery(tableMetaData, records[0].keys)
+        val sql = createUpsertQuery(tableMetaData, records[0].keys)
         println("Upsert sql = $sql")
         connection.prepareStatement(sql).use { preparedStatement ->
             records.forEach { record ->

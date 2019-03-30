@@ -50,7 +50,7 @@ class QueryToTableMigration(
                     }
                 }
             } catch (e: Exception) {
-                println("${e.message} ${e.stackTrace}")
+                println("${e.message}")
                 e.printStackTrace()
                 System.exit(1)
             }
