@@ -1,5 +1,5 @@
 package com.dineshsawant.simplymigrate.driver
 
-interface Migration {
+interface DataMigration {
     fun start(): Long
 }

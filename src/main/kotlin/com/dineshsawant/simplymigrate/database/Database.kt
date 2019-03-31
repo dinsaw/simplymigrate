@@ -5,7 +5,7 @@ import com.dineshsawant.simplymigrate.config.DatabaseInfo
 interface Database {
     fun getQueryMetaData(table: String): QueryResultMetaData
 
-    fun upsert(tableMetaData: QueryResultMetaData, loadSize: Int, records: List<LinkedHashMap<String, Any>>)
+    fun upsert(tableMetaData: QueryResultMetaData, records: List<LinkedHashMap<String, Any>>)
 
     fun getMinMax(
         table: String,

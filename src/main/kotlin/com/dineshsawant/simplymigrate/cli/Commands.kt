@@ -67,7 +67,7 @@ class Migrate : CliktCommand() {
             ).start()
         }
 
-        println("Migration completed. Total migrated = $migratedCount")
+        println("DataMigration completed. Total migrated = $migratedCount")
     }
 
 }

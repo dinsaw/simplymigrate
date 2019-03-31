@@ -1,8 +1,12 @@
 package com.dineshsawant.simplymigrate.driver
 
+import com.dineshsawant.simplymigrate.collections.ArrayBatchProcessor
+import com.dineshsawant.simplymigrate.collections.BatchProcessor
 import com.dineshsawant.simplymigrate.config.DatabaseInfo
+import com.dineshsawant.simplymigrate.database.Column
 import com.dineshsawant.simplymigrate.database.PartitionKey
 import com.dineshsawant.simplymigrate.database.QueryResultMetaData
+import java.util.concurrent.Callable
 import kotlin.streams.toList
 
 class TableMigration(
@@ -22,10 +26,13 @@ class TableMigration(
 
     override fun getSourceMetaData() = sourceDatabase.getTableMetaData(sourceTable)
 
-    override fun getFetcher(
+    override fun distribute(
         sourceTableMetaData: QueryResultMetaData,
         targetTableMetaData: QueryResultMetaData
-    ): Runnable {
+    ): List<Callable<Long>> {
+        val upsertFunction : (List<LinkedHashMap<String, Any>>) -> Unit  = { list -> targetDatabase.upsert(targetTableMetaData, list) }
+        val arrayBatchProcessor: ArrayBatchProcessor<LinkedHashMap<String, Any>> = ArrayBatchProcessor(loadSize, upsertFunction)
+
         val partitionKeyColumn = sourceTableMetaData.getColumnByLabel(partitionKeyName)!!
         val columnList = boundBy.toLowerCase().split(",").toList()
         val boundByColumns = sourceTableMetaData.columnSet.stream()
@@ -33,8 +40,17 @@ class TableMigration(
             .toList()
         val (min, max) = sourceDatabase.getMinMax(sourceTable, partitionKeyColumn, lower, upper, boundByColumns)
         println("Min = $min Max = $max")
-
-        return Runnable {
+        return arrayListOf(Worker(partitionKeyColumn, min, max, targetTableMetaData, arrayBatchProcessor, boundByColumns))
+    }
+    inner class Worker(
+        val partitionKeyColumn: Column,
+        val min: Any,
+        val max: Any,
+        val targetTableMetaData: QueryResultMetaData,
+        val batchUpdater: BatchProcessor<LinkedHashMap<String, Any>>,
+        val boundByColumns: List<Column>
+    ) : Callable<Long> {
+        override fun call(): Long {
             try {
                 val partitionKey = PartitionKey(partitionKeyColumn, min, max)
                 var last: Any? = null
@@ -45,22 +61,17 @@ class TableMigration(
                             partitionKey, start, end, sourceTable,
                             targetTableMetaData.columnSet, lower, upper, boundByColumns
                         )
-                    if (records.isNotEmpty()) {
-                        println("Putting records with size ${records.size}")
-                        blockingQueue.put(records)
-                    }
+                    println("Putting records with size ${records.size}")
+                    batchUpdater.enqueue(records)
                     last = end
-
-                    if (isFetchCompleted(end, max)) {
-                        fetchCompleted = true
-                        break
-                    }
+                    fetchCompleted = isFetchCompleted(end, max)
                 }
             } catch (e: Exception) {
                 println("${e.message} ${e.stackTrace}")
                 e.printStackTrace()
-                System.exit(1)
             }
+            batchUpdater.flush()
+            return batchUpdater.getFlushCount()
         }
     }
 

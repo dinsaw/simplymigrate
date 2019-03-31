@@ -188,7 +188,7 @@ open class SQLDatabase(dbInfo: DatabaseInfo) : Database {
         return builder.toString()
     }
 
-    override fun upsert(tableMetaData: QueryResultMetaData, loadSize: Int, records: List<LinkedHashMap<String, Any>>) {
+    override fun upsert(tableMetaData: QueryResultMetaData, records: List<LinkedHashMap<String, Any>>) {
         if (records.isEmpty()) return
         connection.autoCommit = false
 

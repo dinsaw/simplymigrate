@@ -5,7 +5,7 @@ import java.sql.Connection
 
 class MySQLDatabase(dbInfo: DatabaseInfo) : SQLDatabase(dbInfo) {
     override fun setupConnection(dbInfo: DatabaseInfo): Connection {
-        Class.forName("com.mysql.jdbc.Driver")
+        Class.forName("com.mysql.cj.jdbc.Driver")
         return super.setupConnection(dbInfo)
     }
 }

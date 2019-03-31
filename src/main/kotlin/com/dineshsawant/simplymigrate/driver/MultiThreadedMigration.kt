@@ -1,9 +1,12 @@
 package com.dineshsawant.simplymigrate.driver
 
+import com.dineshsawant.simplymigrate.collections.ArrayBatchProcessor
+import com.dineshsawant.simplymigrate.collections.BatchProcessor
 import com.dineshsawant.simplymigrate.config.DatabaseInfo
 import com.dineshsawant.simplymigrate.database.Database
 import com.dineshsawant.simplymigrate.database.QueryResultMetaData
 import com.dineshsawant.simplymigrate.database.createDatabase
+import java.lang.IllegalArgumentException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.*
@@ -15,14 +18,12 @@ abstract class MultiThreadedMigration(
     val fetchSize: Int,
     val loadSize: Int,
     val partitionKeyName: String
-) : Migration {
+) : DataMigration {
 
     protected val sourceDatabase: Database by lazy { createDatabase(sourceDbInfo) }
     protected val targetDatabase: Database by lazy { createDatabase(targetDbInfo) }
 
     protected var fetchCompleted = false
-
-    protected val blockingQueue: BlockingQueue<List<LinkedHashMap<String, Any>>> = LinkedBlockingQueue(2)
 
     private val executorService = Executors.newFixedThreadPool(2)
 
@@ -33,53 +34,29 @@ abstract class MultiThreadedMigration(
         val targetTableMetaData = getTargetMetaData()
         println("Target table metadata = $targetTableMetaData")
 
-        val pusher = getPusher(targetTableMetaData)
-        val fetcher = getFetcher(sourceTableMetaData, targetTableMetaData)
 
-        val migrationCountFuture = executorService.submit(pusher)
-        executorService.submit(fetcher)
+        val workers = distribute(sourceTableMetaData, targetTableMetaData)
+        val futures = workers.map { executorService.submit(it) }.toList()
 
-        while (!migrationCountFuture.isDone) {
-            Thread.sleep(3000)
+        var migrationCount = 0L
+        futures.forEach {
+            while (!it.isDone) {
+                Thread.sleep(3000)
+            }
+            migrationCount+=it.get()
         }
-
-        val migrationCount = migrationCountFuture.get() as Long
         executorService.shutdown()
-        executorService.awaitTermination(100, TimeUnit.MINUTES)
         return migrationCount
     }
 
-    abstract fun getFetcher(
+    abstract fun distribute(
         sourceTableMetaData: QueryResultMetaData,
         targetTableMetaData: QueryResultMetaData
-    ): Runnable
+    ): List<Callable<Long>>
 
     abstract fun getTargetMetaData(): QueryResultMetaData
 
     abstract fun getSourceMetaData(): QueryResultMetaData
-
-    private fun getPusher(targetTableMetaData: QueryResultMetaData): Callable<Long> {
-        println("Initializing pusher")
-        return  Callable {
-            var migrationCount = 0L
-            try {
-                while (!fetchCompleted || blockingQueue.isNotEmpty()) {
-                    println("Looking for records")
-                    val records = blockingQueue.take()
-                    println("Took records with size = ${records.size}")
-                    targetDatabase.upsert(targetTableMetaData, loadSize, records)
-                    migrationCount += records.size
-                    println("Migrated till now = $migrationCount")
-                }
-                migrationCount
-            } catch (e: Exception) {
-                println("Error ${e.message}")
-                e.printStackTrace()
-                System.exit(2)
-                migrationCount
-            }
-        }
-    }
 
     fun isFetchCompleted(end: Any, max: Any): Boolean {
         return when (end) {
@@ -99,7 +76,7 @@ abstract class MultiThreadedMigration(
                 max as LocalDateTime
                 end.isAfter(max)
             }
-            else -> throw UnsupportedOperationException()
+            else -> throw IllegalArgumentException()
         }
     }
 }
