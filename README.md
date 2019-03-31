@@ -29,7 +29,7 @@ migration:
 
 Then run following command:
 
-`java -jar simplymigrate.jar --configFile=/Users/dineshsawant/oscode/migrator/test-config.yaml
+`java -jar simplymigrate.jar --configFile=./test-config.yaml
 --sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id`
 
 The above command will copy all records from `birthdays` table of SQLite database
