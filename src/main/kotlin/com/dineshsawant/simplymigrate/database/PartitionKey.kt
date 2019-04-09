@@ -1,5 +1,6 @@
 package com.dineshsawant.simplymigrate.database
 
+import com.dineshsawant.simplymigrate.util.isGreaterThanOrEqual
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -12,10 +13,10 @@ class PartitionKey(
     val lastValue: Any = min
 
     fun nextRange(fetchSize: Int, last: Any?): Pair<Any, Any> {
-        var lastValueToBeUsed = last ?: lastValue
+        val lastValueToBeUsed = last ?: lastValue
+        val nextValue: Any
 
-        var nextValue: Any
-        return when (lastValueToBeUsed) {
+        val (s, e) = when (lastValueToBeUsed) {
             is Long -> {
                 nextValue = lastValueToBeUsed + fetchSize
                 Pair(lastValueToBeUsed + 1, nextValue)
@@ -34,6 +35,8 @@ class PartitionKey(
             }
             else -> throw IllegalArgumentException("Unable to create range for $lastValueToBeUsed")
         }
+        val endOrMax = if (isGreaterThanOrEqual(e, max)) max else e
+        return Pair(s, endOrMax)
     }
 
 }

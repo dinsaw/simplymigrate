@@ -1,11 +1,12 @@
 package com.dineshsawant.simplymigrate.database
 
 import com.dineshsawant.simplymigrate.config.DatabaseInfo
+import com.zaxxer.hikari.HikariConfig
 import java.sql.Connection
 
 class MySQLDatabase(dbInfo: DatabaseInfo) : SQLDatabase(dbInfo) {
-    override fun setupConnection(dbInfo: DatabaseInfo): Connection {
+    override fun hikariConfig(dbInfo: DatabaseInfo): HikariConfig {
         Class.forName("com.mysql.cj.jdbc.Driver")
-        return super.setupConnection(dbInfo)
+        return super.hikariConfig(dbInfo)
     }
 }

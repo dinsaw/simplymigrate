@@ -1,8 +1,10 @@
 package com.dineshsawant.simplymigrate.database
 
+import mu.KotlinLogging
 import java.sql.PreparedStatement
 import java.sql.ResultSetMetaData
 
+private val logger = KotlinLogging.logger {}
 fun ResultSetMetaData.toColumnSet() =
     (1..this.columnCount).map {
         var column = Column(
@@ -16,7 +18,7 @@ fun ResultSetMetaData.toColumnSet() =
                 column.uniqueKey = this.fields[it - 1].isUniqueKey
             }
             else -> {
-                println("Unable to figure out primary and unique key for ${this.javaClass}")
+                logger.debug { "Unable to figure out primary and unique key for ${this.javaClass}" }
             }
         }
         column

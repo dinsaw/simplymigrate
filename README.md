@@ -5,6 +5,7 @@ Utility to migrate data from one database to other.
 
 - Run following commands to build jar
 - `./gradlew clean jar`
+- Find jar in `build/libs` directory
 
 ### Features
 
@@ -29,8 +30,7 @@ migration:
 
 Then run following command:
 
-`java -jar simplymigrate.jar --configFile=./test-config.yaml
---sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id`
+`java -jar simplymigrate.jar --configFile=./test-config.yaml --sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id`
 
 The above command will copy all records from `birthdays` table of SQLite database
 to MySQL database's `test.birthdays` table.
@@ -46,9 +46,7 @@ Following command will migrate records which have `id` from 100 to 1000 (inclusi
 
 Following command will migrate records which have `birthday` from 1040-1-1 to 1940-1-1 (inclusive).
 
-`java -jar simplymigrate.jar --configFile=./test-config.yaml
---sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id
---boundBy=birthday --lower=1040-1-1 --upper=1940-1-1`
+`java -jar simplymigrate.jar --configFile=./test-config.yaml --sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id --boundBy=birthday --lower=1040-1-1 --upper=1940-1-1`
 
 ## Supported databases
 - MYSQL

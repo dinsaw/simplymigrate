@@ -9,8 +9,10 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.types.int
 import com.uchuhimo.konf.Config
+import mu.KotlinLogging
 import java.io.File
 
+private val logger = KotlinLogging.logger {}
 class Migrate : CliktCommand() {
     val configFilePath: String by option("--configFile", help = "Config file path").prompt("Provide config file path")
     val sourceTable: String by option("--sourceTable", help = "Source Table").default("")
@@ -28,18 +30,18 @@ class Migrate : CliktCommand() {
 
     override fun run() {
 
-        println(
+        logger.info {
             "sourceTable = $sourceTable, targetTable = $targetTable, fetchSize = $fetchSize, loadSize = $loadSize" +
                     "boundBy = $boundBy, lower = $lower, upper = $upper"
-        )
+        }
         if (sourceTable.isNullOrBlank() && fetchQueryFilePath.isNullOrBlank()) {
             throw IllegalArgumentException("Either sourceTable or fetchQueryFilePath should be provided")
         }
 
-        println("Using config from location $configFilePath")
+        logger.info { "Using config from location $configFilePath" }
 
         val config = Config { addSpec(MigrationConfig) }.from.yaml.file(configFilePath)
-        println("Configuration = ${config.toMap()}")
+        logger.info { "Configuration = ${config.toMap()}" }
 
         val migratedCount = if (fetchQueryFilePath.isNotBlank()) {
             val fetchQuery = File(fetchQueryFilePath).readText()
@@ -67,7 +69,7 @@ class Migrate : CliktCommand() {
             ).start()
         }
 
-        println("DataMigration completed. Total migrated = $migratedCount")
+        logger.info { "DataMigration completed. Total migrated = $migratedCount" }
     }
 
 }

@@ -1,4 +1,4 @@
-package com.dineshsawant.simplymigrate.collections
+package com.dineshsawant.simplymigrate.util
 
 interface BatchProcessor<T> {
     fun enqueue(input: T)
