@@ -1,4 +1,7 @@
 ## SimplyMigrate
+[![Build Status](https://travis-ci.org/dinsaw/simplymigrate.svg?branch=master)](https://travis-ci.org/dinsaw/simplymigrate)
+[![codecov](https://codecov.io/gh/dinsaw/simplymigrate/branch/master/graph/badge.svg)](https://codecov.io/gh/dinsaw/simplymigrate)
+
 Utility to migrate data from one database to other.
 
 ### How to use
