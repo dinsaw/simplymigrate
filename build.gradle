@@ -7,6 +7,7 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
@@ -16,9 +17,25 @@ dependencies {
     compile "com.uchuhimo:konf:$konfVersion"
     compile "com.github.ajalt:clikt:$cliktVersion"
 
+    // Connection pool
+    compile "com.zaxxer:HikariCP:$hikariCPVersion"
+
+    // Logging
+    compile group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+
+    compile "io.github.microutils:kotlin-logging:$kotlinLoggingVersion"
+
     // Database drivers
     compile "org.xerial:sqlite-jdbc:$sqliteDriverVersion"
     compile "mysql:mysql-connector-java:$mysqlDriverVersion"
+
+    // Testing
+    testCompile "org.spekframework.spek2:spek-dsl-jvm:$spekVersion"
+    testCompile "org.spekframework.spek2:spek-runner-junit5:$spekVersion"
+    testRuntimeOnly "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testRuntime "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
 }
 
 compileKotlin {
@@ -26,6 +43,12 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+test {
+    useJUnitPlatform {
+        includeEngines 'spek2'
+    }
 }
 
 jar {

@@ -1,13 +1,16 @@
 package com.dineshsawant.simplymigrate.driver
 
-import com.dineshsawant.simplymigrate.collections.ArrayBatchProcessor
-import com.dineshsawant.simplymigrate.collections.BatchProcessor
+import com.dineshsawant.simplymigrate.util.BatchProcessor
 import com.dineshsawant.simplymigrate.config.DatabaseInfo
 import com.dineshsawant.simplymigrate.database.Column
 import com.dineshsawant.simplymigrate.database.PartitionKey
 import com.dineshsawant.simplymigrate.database.QueryResultMetaData
+import com.dineshsawant.simplymigrate.util.divideRange
+import com.dineshsawant.simplymigrate.util.isGreaterThanOrEqual
+import mu.KotlinLogging
 import java.util.concurrent.Callable
 
+private val logger = KotlinLogging.logger {}
 class QueryToTableMigration(
     sourceDbInfo: DatabaseInfo,
     targetDbInfo: DatabaseInfo,
@@ -25,15 +28,19 @@ class QueryToTableMigration(
 
     override fun distribute(
         sourceTableMetaData: QueryResultMetaData,
-        targetTableMetaData: QueryResultMetaData): List<Callable<Long>> {
-
-        val upsertFunction : (List<LinkedHashMap<String, Any>>) -> Unit  = { list -> targetDatabase.upsert(targetTableMetaData, list) }
-        val arrayBatchProcessor: ArrayBatchProcessor<LinkedHashMap<String, Any>> = ArrayBatchProcessor(loadSize, upsertFunction)
+        targetTableMetaData: QueryResultMetaData,
+        numberOfParts: Int
+    ): List<Callable<Long>> {
 
         val partitionKeyColumn = sourceTableMetaData.getColumnByLabel(partitionKeyName)!!
         val (min, max) = sourceDatabase.getMinMaxForQuery(fetchQuery, partitionKeyColumn)
-        println("Min = $min Max = $max")
-        return arrayListOf(Worker(partitionKeyColumn, min, max, targetTableMetaData, arrayBatchProcessor))
+        logger.debug { "Min = $min Max = $max" }
+
+        val ranges = divideRange(min, max, numberOfParts)
+        logger.debug { "Divided work in ranges = $ranges" }
+        return ranges
+            .map { Worker(partitionKeyColumn, it.first, it.second, targetTableMetaData, batchUpdater(targetTableMetaData)) }
+            .toList()
     }
 
     inner class Worker(
@@ -49,19 +56,19 @@ class QueryToTableMigration(
                 var last: Any? = null
                 while (!fetchCompleted) {
                     val (start, end) = partitionKey.nextRange(fetchSize, last)
+
                     val records = sourceDatabase.selectRecordsByQuery(
                         partitionKey, start, end, fetchQuery,
                         targetTableMetaData.columnSet
                     )
-                    println("Putting records with size ${records.size}")
+                    logger.debug { "Putting records with size ${records.size}" }
                     batchUpdater.enqueue(records)
 
                     last = end
-                    fetchCompleted = isFetchCompleted(end, max)
+                    fetchCompleted = isGreaterThanOrEqual(end, max)
                 }
             } catch (e: Exception) {
-                println("${e.message}")
-                e.printStackTrace()
+                logger.error(e) { "Error occurred" }
             }
             batchUpdater.flush()
             return batchUpdater.getFlushCount()

@@ -1,27 +1,29 @@
 package com.dineshsawant.simplymigrate.database
 
 import com.dineshsawant.simplymigrate.config.DatabaseInfo
+import com.zaxxer.hikari.HikariConfig
 import java.sql.Connection
 
 class SQLiteDatabase(dbInfo: DatabaseInfo) : SQLDatabase(dbInfo) {
-
-    override fun setupConnection(dbInfo: DatabaseInfo): Connection {
-        Class.forName("org.sqlite.JDBC")
-        return super.setupConnection(dbInfo)
+    override fun hikariConfig(dbInfo: DatabaseInfo): HikariConfig {
+         Class.forName("org.sqlite.JDBC")
+         return super.hikariConfig(dbInfo)
     }
 
     override fun getTableMetaData(table: String): QueryResultMetaData {
         val metaData = super.getTableMetaData(table)
 
         if (metaData.primaryKeyColumn == null) {
-            connection.createStatement().connection.createStatement().use { statement ->
-                statement.execute("PRAGMA table_info($table)")
-                statement.resultSet.use { rs ->
-                    while (rs.next()) {
-                        if (1 == rs.getInt("pk")) {
-                            val pkColumn = metaData.columnSet.first { it.label == rs.getString("name").toLowerCase() }
-                            metaData.primaryKeyColumn = pkColumn
-                            break
+            connection.use {
+                it.createStatement().use { statement ->
+                    statement.execute("PRAGMA table_info($table)")
+                    statement.resultSet.use { rs ->
+                        while (rs.next()) {
+                            if (1 == rs.getInt("pk")) {
+                                val pkColumn = metaData.columnSet.first { it.label == rs.getString("name").toLowerCase() }
+                                metaData.primaryKeyColumn = pkColumn
+                                break
+                            }
                         }
                     }
                 }

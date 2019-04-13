@@ -2,17 +2,15 @@ package com.dineshsawant.simplymigrate.database
 
 import java.sql.ResultSetMetaData
 
-class QueryResultMetaData {
+class QueryResultMetaData(val rsmd: ResultSetMetaData) {
     var tableName: String
     val catalogName: String
     val schemaName: String
-    val rsmd: ResultSetMetaData
     var columnSet: MutableSet<Column> = mutableSetOf()
     var primaryKeyColumn: Column?
     private var columnLabelMap: MutableMap<String, Column> = mutableMapOf()
 
-    constructor(rsmd: ResultSetMetaData) {
-        this.rsmd = rsmd
+    init {
         this.catalogName = rsmd.getCatalogName(1)
         this.schemaName = rsmd.getSchemaName(1)
         this.tableName = rsmd.getTableName(1)

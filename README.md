@@ -32,12 +32,13 @@ Then run following command:
 
 `java -jar simplymigrate.jar --configFile=./test-config.yaml --sourceTable=birthdays --targetTable=test.birthdays --partitionKey=id`
 
+The above command will copy all records from `birthdays` table of SQLite database
+to MySQL database's `test.birthdays` table.
+Here partition key can be number or date or datetime type column.
+
 #### It is fast
 
-The above command will copy all records from `birthdays` table of SQLite database
-to MySQL database's `test.birthdays` table. 
-
-Here partition key can be number or date or datetime type column. SimplyMigrate does not use OFFSET-LIMIT query provided by SQL to fetch data from source database . [Because OFFSET-LIMIT query takes more time as the offset value becomes higher](https://use-the-index-luke.com/sql/partial-results/fetch-next-page).
+SimplyMigrate does not use OFFSET-LIMIT query provided by SQL to fetch data from source database . [Because OFFSET-LIMIT query takes more time as the offset value becomes higher](https://use-the-index-luke.com/sql/partial-results/fetch-next-page).
 
 SimplyMigrate fetches data in ranges by increasing value of partition key. Hence significant performance boost is achieved.
 

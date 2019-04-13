@@ -1,5 +1,8 @@
-package com.dineshsawant.simplymigrate.collections
+package com.dineshsawant.simplymigrate.util
 
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 class ArrayBatchProcessor<T>(private val batchSize: Int, private val processor: (List<T>) -> Unit):BatchProcessor<T> {
 
     var elements = ArrayList<T>(batchSize)
@@ -30,10 +33,10 @@ class ArrayBatchProcessor<T>(private val batchSize: Int, private val processor: 
     override fun flush() {
         if (elements.isEmpty()) return
 
-        println("Flushing ${elements.size} elements")
+        logger.debug { "Flushing ${elements.size} elements" }
         processor.invoke(elements)
         totalFlushCount += elements.size.toLong()
-        println("Total flushed elements till now ${getFlushCount()}")
+        logger.debug { "Total flushed elements till now ${getFlushCount()}" }
 
         elements = ArrayList(batchSize)
     }
